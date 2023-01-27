@@ -15,6 +15,12 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
+            $table->bigInteger('invoice_id');
+            $table->bigInteger('client_id');
+            $table->bigInteger('product_id');
+            $table->string('product_name');
+            $table->string('billing_type');
+            $table->decimal('total');
             $table->timestamps();
         });
     }

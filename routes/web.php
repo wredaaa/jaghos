@@ -26,4 +26,7 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 Route::get('/order', [App\Http\Controllers\OrderController::class, 'index'])->name('order');
 Route::get('/domain-register', [App\Http\Controllers\OrderController::class, 'domainRegister']);
 Route::post('/check-domain/{domain}', [App\Http\Controllers\OrderController::class, 'checkDomainAjax']);
+Route::get('/checkout/{id}', [App\Http\Controllers\OrderController::class, 'checkout']);
+Route::get('/review', [App\Http\Controllers\OrderController::class, 'review']);
+Route::post('/submit-order', [App\Http\Controllers\OrderController::class, 'submitOrder']);
 

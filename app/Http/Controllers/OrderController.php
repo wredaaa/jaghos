@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\Http;
 
 class OrderController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
     /**
      * Display a listing of the resource.
      *
@@ -20,6 +24,19 @@ class OrderController extends Controller
          */
         $data = $this->callWhmcs('getProducts');
 
+        if(isset($data['products'])) {
+            $items = [];
+            foreach($data['products']['product'] as $key => $product) {
+                $items[$key] = [
+                    'product_id' => $product['pid'],
+                    'product_name' => $product['name'],
+                    'pricing' => $product['pricing']['IDR'] ?? $product['pricing']['USD'],
+                ];
+            }
+
+            return view('product', compact('items'));
+        }
+        
         return view('product', compact('data'));
     }
 
@@ -45,6 +62,79 @@ class OrderController extends Controller
         return $data;
     }
 
+    public function checkout($id)
+    {
+        /**
+         * Do this function to show domain registration
+         */
+        $query = [
+            'pid' => $id
+        ];
+
+        $product = $this->callWhmcs('getProducts', $query);
+        
+        $pricing = $product['products']['product'][0]['pricing']['IDR'] ?? $product['products']['product'][0]['pricing']['USD'];
+        // dd($pricing);
+        $items = [];
+        foreach ($pricing as $key => $value ) {
+            if(substr($key, -1) == "y") {
+                $items[$key] = $value;
+            }
+        }
+        $product['billing_type'] = $items;
+        $product['prefix'] = $pricing['prefix'];
+        $product['suffix'] = $pricing['suffix'];
+
+        return view('order', compact('product'));
+    }
+
+    public function review()
+    {
+        /**
+         * Do this function to show domain registration
+         */
+        $paymentMethod = $this->callWhmcs('GetPaymentMethods');
+
+        return view('invoices', compact('paymentMethod'));
+    }
+
+    public function submitOrder(Request $request)
+    {
+        /**
+         * Do this function to submit order
+         */
+        $queryClient = [
+            'firstname' => $request->get('firstname'),
+            'lastname' => $request->get('lastname'),
+            'email' => $request->get('email'),
+            'address1' => $request->get('address'),
+            'city' => $request->get('city'),
+            'state' => $request->get('state'),
+            'postcode' => $request->get('postcode'),
+            'country' => 'US',
+            'phonenumber' => $request->get('phonenumber'),
+            'password2' => $request->get('password'),
+            'clientip' => $request->get('clientip'),
+        ];
+
+        $client = $this->callWhmcs('AddClient', $queryClient);
+        
+        $clientid = $client['clientid'];
+        $queryOrder = [
+            'clientid' => $clientid,
+            'pid' => $request->get('pid'),
+            'domain' => $request->get('domain'),
+            'idnlanguage' => 'INA',
+            'billingcycle' => $request->get('billing_type'),
+            'domaintype' => 'register',
+            'paymentmethod' => $request->get('paymentmethod'),
+        ];
+
+        $order = $this->callWhmcs('AddOrder', $queryOrder);
+        dd($order);
+        return redirect('/home');
+    }
+
     function callWhmcs($action, $params=null) {
         /**
          * Do this function to request data to WHMCS.
@@ -58,8 +148,8 @@ class OrderController extends Controller
          */
         $url = getenv('WHMCS_URL');
         $query = [
-            'username' => 'Q7TjVTPuasaCmlNSg1h1LrnfXQqDbCG0',
-            'password' => 'bn5J0OqM2fpf6AXcJSZfqUbukeaXdxti',
+            'username' => getenv('API_IDENTIFIER'),
+            'password' => getenv('API_SECRET'),
             'action' => $action,
             'responsetype' => 'json',
         ]; 

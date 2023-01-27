@@ -34,9 +34,13 @@
     </div>
 
     <div class="col-auto">
-        <p style="color:red;">wreda.com is unavailable</p>
-        <p>Congratulations! <strong><i>ajhdaljkd.com</i></strong> is available! Continue to register this domain for Rp15 IDR</p>
-        <button class="btn btn-primary mb-3 continue-checkout">Continue</button>
+        <div class="alert alert-danger msg-error" role="alert" style="display:none;">
+            wreda.com is unavailable
+        </div>
+        <div class="alert alert-success msg-success" role="alert" style="display:none;">
+            Congratulations! <strong><i>ajhdaljkd.com</i></strong> is available! Continue to register this domain for Rp15 IDR
+        </div>
+        <a href="/checkout" class="btn btn-primary mb-3 continue-checkout disabled">Continue</a>
     </div>
 </div>
 

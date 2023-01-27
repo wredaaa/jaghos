@@ -75,7 +75,7 @@
                             @endif
                         @else
                             <li>
-                                <a href="#" class="notification">
+                                <a href="/checkout" class="notification">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="black" class="bi bi-cart" viewBox="0 0 16 16">
                                     <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
                                     </svg>
@@ -117,9 +117,27 @@
 <script>
     var token = $("meta[name='csrf-token']").attr("content");
 
-    $(".order-now").click(function(e) {
-        $('#domain').show();
-        $('#product').hide();
+    $(document).ready(function() {
+        var count = localStorage.getItem("count");
+        var domain = localStorage.getItem("domain");
+        const product = JSON.parse(localStorage.getItem("cart"));
+
+        $('.badge').text(count);     
+
+        var price = $(".select-billing").find('option').filter(':selected').data("value");
+        var type = $(".select-billing").find('option').filter(':selected').val(); 
+
+        $(".price").text(price);
+        $(".billing-type").text(type);
+        $(".nominal").text(price);
+        $(".grand-total").text(price);
+
+        $(".review-pname").text(product.product_name);
+        $(".price").text(product.price);
+        $(".total-price").text(product.price + " " + product.billing_type);
+        $("#review-domain").val(domain)
+        $("#review-type").val(product.billing_type);
+        $("#review-pid").val(product.product_id);
     });
 
     $(".check-domain").click(function(e){
@@ -127,6 +145,7 @@
 
         var domain = $("#domain").val();
         var type = $("#type").val();
+        var pid = localStorage.getItem("product_id");
         
         $.ajax({
             url: '/check-domain/' + domain + type,
@@ -141,7 +160,26 @@
                 $("#loader_register_home").show();
             },
             success:function(response){
-                console.log(response);
+                if(response.result == 'error') {
+                    $(".msg-error").show()
+                    $(".msg-success").hide()
+                    $(".msg-error").text(response.message)
+                    $(".continue-checkout").addClass("disabled");
+                } else if (!response.whois) {
+                    $(".msg-error").hide()
+                    $(".msg-success").show()
+                    $(".msg-success").text("Result success, response empty")
+                    $(".continue-checkout").removeClass("disabled");
+                    localStorage.setItem("domain", domain + type);
+                    $('.continue-checkout').attr('href', '/checkout/'+ pid)
+                } else {
+                    $(".msg-error").hide()
+                    $(".msg-success").show()
+                    $(".msg-success").text(response)
+                    $(".continue-checkout").removeClass("disabled");
+                    localStorage.setItem("domain", domain + type);
+                    $('.continue-checkout').attr('href', '/checkout/'+ pid)
+                }
             },
             complete:function(data){
                 // Hide image container
@@ -151,13 +189,48 @@
     });
 
     $(".continue-checkout").click(function(e) {
-        var count = $('.badge').text();
+
+    });
+
+    $(".select-billing").change(function(e) {
+        var price = $(this).find('option').filter(':selected').data("value");
+        var type = $(this).find('option').filter(':selected').val(); 
+        
+        $(".price").text(price);
+        $(".billing-type").text(type);
+        $(".nominal").text(price);
+        $(".grand-total").text(price);
+    });
+
+    $(".create-invoice").click(function(e){
+
+        var pid = $(".pid").val();
+        var pname = $(".pname").text();
+        var prefix = $(".prefix").val();
+        var suffix = $(".suffix").val();
+        var type = $(".select-billing").find('option').filter(':selected').val(); 
+        var price = $(".select-billing").find('option').filter(':selected').data("value");
+
+        const arr = {
+            "product_id": pid, 
+            "product_name": pname,
+            "billing_type": type,
+            "price": price,
+            "prefix": prefix,
+            "suffix": suffix
+        }
+
+        localStorage.setItem('cart', JSON.stringify(arr))
+
+        var count = localStorage.getItem("count");
         if(!count) {
             count = 0;
         }
         var result = parseInt(count) + 1;
 
+        localStorage.setItem("count", result);
         $('.badge').text(result);
     });
+    
 </script>
 </html>
